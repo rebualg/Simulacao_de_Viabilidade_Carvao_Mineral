@@ -2,6 +2,8 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import BytesIO
+from fpdf import FPDF
 
 # Critérios configuráveis para avaliação
 CRITERIA = {
@@ -96,7 +98,38 @@ def show_graph(df):
     plt.legend(title="Viabilidade")
     plt.grid(True, linestyle="--", alpha=0.7)
     plt.tight_layout()
-    st.pyplot(plt)
+
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close()
+    return buf
+
+def create_pdf(data, df, graph_image):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Relatório de Viabilidade do Carvão Mineral", ln=True, align="C")
+    pdf.ln(10)
+
+    pdf.set_font("Arial", size=10)
+    pdf.cell(0, 10, txt=f"PCS (kcal/kg): {data['PCS (kcal/kg)']}", ln=True)
+    pdf.cell(0, 10, txt=f"PCI (kcal/kg): {data['PCI (kcal/kg)']}", ln=True)
+    pdf.cell(0, 10, txt=f"% Cinzas: {data['% Cinzas']}", ln=True)
+    pdf.cell(0, 10, txt=f"% Umidade: {data['% Umidade']}", ln=True)
+    pdf.cell(0, 10, txt=f"% Enxofre: {data['% Enxofre']}", ln=True)
+    pdf.ln(10)
+
+    pdf.cell(0, 10, txt=f"Resultado: {df['Viabilidade'][0]}", ln=True)
+    pdf.cell(0, 10, txt=f"Justificativa: {df['Justificativa'][0]}", ln=True)
+
+    if df["Custo Adicional (USD/t)"].iloc[0]:
+        pdf.cell(0, 10, txt=f"Custo Adicional: {df['Custo Adicional (USD/t)'][0]:.2f} USD/t", ln=True)
+
+    pdf.ln(10)
+    pdf.image(graph_image, x=50, y=None, w=100)
+
+    return pdf.output(dest="S").encode("latin1")
 
 st.title("Simulacao de Viabilidade do Carvao Mineral")
 pcs = st.number_input("PCS (kcal/kg)", min_value=0, step=100)
@@ -118,6 +151,17 @@ if st.button("Rodar Simulacao"):
     st.write(f"**Justificativa:** {df['Justificativa'][0]}")
     if df["Custo Adicional (USD/t)"].iloc[0]:
         st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
-    show_graph(df)
+    
+    # Exibe o gráfico
+    graph_image = show_graph(df)
+    st.image(graph_image, caption="Gráfico de Viabilidade")
 
-
+    # Botão para exportar o PDF
+    if st.button("Exportar Relatório em PDF"):
+        pdf_bytes = create_pdf(data, df, graph_image)
+        st.download_button(
+            label="Baixar PDF",
+            data=pdf_bytes,
+            file_name="relatorio_carvao.pdf",
+            mime="application/pdf",
+        )
