@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from fpdf import FPDF  # Biblioteca para criar PDFs
 
 # Critérios configuráveis para avaliação
 CRITERIA = {
@@ -24,6 +25,7 @@ COST_TABLE = {
     0.69: 5.45,
 }
 
+# Função para avaliar os parâmetros do carvão
 def evaluate_coal(data):
     def evaluate(row):
         reasons = []
@@ -78,26 +80,32 @@ def evaluate_coal(data):
     df["Viabilidade"], df["Justificativa"], df["Custo Adicional (USD/t)"] = zip(*df.apply(evaluate, axis=1))
     return df
 
-def show_graph(df):
-    color_map = {"Verde": "green", "Amarelo": "yellow", "Vermelho": "red"}
-    df["Cor"] = df["Viabilidade"].map(color_map)
+# Função para criar o PDF
+def create_pdf(data, df):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
 
-    plt.figure(figsize=(10, 6))
-    for viability, color in color_map.items():
-        subset = df[df["Viabilidade"] == viability]
-        plt.scatter(subset["PCS (kcal/kg)"], subset["% Cinzas"],
-                    label=viability, color=color, s=100, edgecolor="black")
-        
-    plt.title("Avaliacao de Viabilidade do Carvao Mineral", fontsize=14)
-    plt.xlabel("PCS (kcal/kg)", fontsize=12)
-    plt.ylabel("% Cinzas", fontsize=12)
-    plt.axhline(y=CRITERIA["% Cinzas"]["green_max"], color="black", linestyle="--", label="Limite de Cinzas")
-    plt.axvline(x=CRITERIA["PCS (kcal/kg)"]["green_min"], color="blue", linestyle="--", label="Limite de PCS")
-    plt.legend(title="Viabilidade")
-    plt.grid(True, linestyle="--", alpha=0.7)
-    plt.tight_layout()
-    st.pyplot(plt)
+    pdf.cell(200, 10, txt="Relatório de Viabilidade do Carvão Mineral", ln=True, align="C")
+    pdf.ln(10)
 
+    pdf.set_font("Arial", size=10)
+    pdf.cell(0, 10, txt=f"PCS (kcal/kg): {data['PCS (kcal/kg)']}", ln=True)
+    pdf.cell(0, 10, txt=f"PCI (kcal/kg): {data['PCI (kcal/kg)']}", ln=True)
+    pdf.cell(0, 10, txt=f"% Cinzas: {data['% Cinzas']}", ln=True)
+    pdf.cell(0, 10, txt=f"% Umidade: {data['% Umidade']}", ln=True)
+    pdf.cell(0, 10, txt=f"% Enxofre: {data['% Enxofre']}", ln=True)
+    pdf.ln(10)
+
+    pdf.cell(0, 10, txt=f"Resultado: {df['Viabilidade'][0]}", ln=True)
+    pdf.cell(0, 10, txt=f"Justificativa: {df['Justificativa'][0]}", ln=True)
+
+    if df["Custo Adicional (USD/t)"].iloc[0]:
+        pdf.cell(0, 10, txt=f"Custo Adicional: {df['Custo Adicional (USD/t)'][0]:.2f} USD/t", ln=True)
+
+    return pdf.output(dest="S").encode("latin1")
+
+# Função principal da aplicação
 st.title("Simulacao de Viabilidade do Carvao Mineral")
 pcs = st.number_input("PCS (kcal/kg)", min_value=0, step=100)
 pci = st.number_input("PCI (kcal/kg)", min_value=0, step=100)
@@ -118,4 +126,13 @@ if st.button("Rodar Simulacao"):
     st.write(f"**Justificativa:** {df['Justificativa'][0]}")
     if df["Custo Adicional (USD/t)"].iloc[0]:
         st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
-    show_graph(df)
+
+    # Adiciona botão para exportar PDF
+    if st.button("Exportar Relatório em PDF"):
+        pdf_bytes = create_pdf(data, df)
+        st.download_button(
+            label="Baixar PDF",
+            data=pdf_bytes,
+            file_name="relatorio_carvao.pdf",
+            mime="application/pdf"
+        )
