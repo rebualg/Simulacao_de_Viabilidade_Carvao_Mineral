@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import BytesIO
 from fpdf import FPDF  # Biblioteca para criar PDFs
 
 # Critérios configuráveis para avaliação
@@ -80,8 +81,35 @@ def evaluate_coal(data):
     df["Viabilidade"], df["Justificativa"], df["Custo Adicional (USD/t)"] = zip(*df.apply(evaluate, axis=1))
     return df
 
+# Função para exibir o gráfico
+def show_graph(df):
+    color_map = {"Verde": "green", "Amarelo": "yellow", "Vermelho": "red"}
+    df["Cor"] = df["Viabilidade"].map(color_map)
+
+    plt.figure(figsize=(10, 6))
+    for viability, color in color_map.items():
+        subset = df[df["Viabilidade"] == viability]
+        plt.scatter(subset["PCS (kcal/kg)"], subset["% Cinzas"],
+                    label=viability, color=color, s=100, edgecolor="black")
+
+    plt.title("Avaliacao de Viabilidade do Carvao Mineral", fontsize=14)
+    plt.xlabel("PCS (kcal/kg)", fontsize=12)
+    plt.ylabel("% Cinzas", fontsize=12)
+    plt.axhline(y=CRITERIA["% Cinzas"]["green_max"], color="black", linestyle="--", label="Limite de Cinzas")
+    plt.axvline(x=CRITERIA["PCS (kcal/kg)"]["green_min"], color="blue", linestyle="--", label="Limite de PCS")
+    plt.legend(title="Viabilidade")
+    plt.grid(True, linestyle="--", alpha=0.7)
+    plt.tight_layout()
+
+    # Salva o gráfico como imagem em bytes
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close()
+    return buf
+
 # Função para criar o PDF
-def create_pdf(data, df):
+def create_pdf(data, df, graph_image):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -102,6 +130,9 @@ def create_pdf(data, df):
 
     if df["Custo Adicional (USD/t)"].iloc[0]:
         pdf.cell(0, 10, txt=f"Custo Adicional: {df['Custo Adicional (USD/t)'][0]:.2f} USD/t", ln=True)
+
+    pdf.ln(10)
+    pdf.image(graph_image, x=50, y=None, w=100)
 
     return pdf.output(dest="S").encode("latin1")
 
@@ -127,12 +158,10 @@ if st.button("Rodar Simulacao"):
     if df["Custo Adicional (USD/t)"].iloc[0]:
         st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
 
+    # Exibe o gráfico
+    graph_buf = show_graph(df)
+    st.image(graph_buf, caption="Gráfico de Viabilidade")
+
     # Adiciona botão para exportar PDF
     if st.button("Exportar Relatório em PDF"):
-        pdf_bytes = create_pdf(data, df)
-        st.download_button(
-            label="Baixar PDF",
-            data=pdf_bytes,
-            file_name="relatorio_carvao.pdf",
-            mime="application/pdf"
-        )
+        pdf_bytes =
