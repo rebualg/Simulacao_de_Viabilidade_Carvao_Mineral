@@ -179,6 +179,4 @@ if st.button("Rodar Simulacao"):
     st.write(f"**Resultado:** {df['Viabilidade'][0]}")
     st.write(f"**Justificativa:** {df['Justificativa'][0]}")
     if df["Custo Adicional (USD/t)"].iloc[0]:
-        st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
-
-   
+        st.write(f"**Custo Adicional devido ao
