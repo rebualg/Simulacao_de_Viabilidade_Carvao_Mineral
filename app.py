@@ -160,10 +160,10 @@ if st.button("Rodar Simulacao"):
     st.image(graph_image, caption="Gráfico de Viabilidade")
 
     # Botão para exportar o PDF
-    if st.button("Exportar Relatório em PDF"):
-        pdf_buffer = create_pdf(data, df, graph_image)
-        st.download_button(
-            label="Baixar PDF",
-            data=pdf_buffer,
-            file_name="relatorio_carvao.pdf",
-           
+    pdf_buffer = create_pdf(data, df, graph_image)
+    st.download_button(
+        label="Baixar PDF",
+        data=pdf_buffer,
+        file_name="relatorio_carvao.pdf",
+        mime="application/pdf"
+    )
