@@ -129,7 +129,10 @@ def create_pdf(data, df, graph_image):
     pdf.ln(10)
     pdf.image(graph_image, x=50, y=None, w=100)
 
-    return pdf.output(dest="S").encode("latin1")
+    buf = BytesIO()
+    pdf.output(buf)
+    buf.seek(0)
+    return buf
 
 st.title("Simulacao de Viabilidade do Carvao Mineral")
 pcs = st.number_input("PCS (kcal/kg)", min_value=0, step=100)
@@ -158,10 +161,9 @@ if st.button("Rodar Simulacao"):
 
     # Botão para exportar o PDF
     if st.button("Exportar Relatório em PDF"):
-        pdf_bytes = create_pdf(data, df, graph_image)
+        pdf_buffer = create_pdf(data, df, graph_image)
         st.download_button(
             label="Baixar PDF",
-            data=pdf_bytes,
+            data=pdf_buffer,
             file_name="relatorio_carvao.pdf",
-            mime="application/pdf",
-        )
+           
