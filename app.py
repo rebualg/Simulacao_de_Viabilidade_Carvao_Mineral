@@ -164,4 +164,4 @@ if st.button("Rodar Simulacao"):
 
     # Adiciona botão para exportar PDF
     if st.button("Exportar Relatório em PDF"):
-        pdf_bytes =
+        pdf_bytes = create_pdf(data, df, graph_buf)
