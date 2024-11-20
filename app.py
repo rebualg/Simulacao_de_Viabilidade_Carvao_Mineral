@@ -1,10 +1,13 @@
+#Simulacao_de_Viabilidade_Carvao_Mineral
+#Código sem auto-execução.
+#Código para Github
+
+
+
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from io import BytesIO
-from fpdf import FPDF
-import tempfile  # Para criar arquivos temporários
 
 # Critérios configuráveis para avaliação
 CRITERIA = {
@@ -99,45 +102,7 @@ def show_graph(df):
     plt.legend(title="Viabilidade")
     plt.grid(True, linestyle="--", alpha=0.7)
     plt.tight_layout()
-
-    buf = BytesIO()
-    plt.savefig(buf, format="png")
-    buf.seek(0)
-    plt.close()
-    return buf
-
-def create_pdf(data, df, graph_image):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Relatório de Viabilidade do Carvão Mineral", ln=True, align="C")
-    pdf.ln(10)
-
-    pdf.set_font("Arial", size=10)
-    pdf.cell(0, 10, txt=f"PCS (kcal/kg): {data['PCS (kcal/kg)']}", ln=True)
-    pdf.cell(0, 10, txt=f"PCI (kcal/kg): {data['PCI (kcal/kg)']}", ln=True)
-    pdf.cell(0, 10, txt=f"% Cinzas: {data['% Cinzas']}", ln=True)
-    pdf.cell(0, 10, txt=f"% Umidade: {data['% Umidade']}", ln=True)
-    pdf.cell(0, 10, txt=f"% Enxofre: {data['% Enxofre']}", ln=True)
-    pdf.ln(10)
-
-    pdf.cell(0, 10, txt=f"Resultado: {df['Viabilidade'][0]}", ln=True)
-    pdf.cell(0, 10, txt=f"Justificativa: {df['Justificativa'][0]}", ln=True)
-
-    if df["Custo Adicional (USD/t)"].iloc[0]:
-        pdf.cell(0, 10, txt=f"Custo Adicional: {df['Custo Adicional (USD/t)'][0]:.2f} USD/t", ln=True)
-
-    pdf.ln(10)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
-        tmpfile.write(graph_image.read())
-        tmpfile.flush()
-        pdf.image(tmpfile.name, x=50, y=None, w=100)
-
-    buf = BytesIO()
-    pdf.output(buf)
-    buf.seek(0)
-    return buf
+    st.pyplot(plt)
 
 st.title("Simulacao de Viabilidade do Carvao Mineral")
 pcs = st.number_input("PCS (kcal/kg)", min_value=0, step=100)
@@ -159,5 +124,8 @@ if st.button("Rodar Simulacao"):
     st.write(f"**Justificativa:** {df['Justificativa'][0]}")
     if df["Custo Adicional (USD/t)"].iloc[0]:
         st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
-    
-    # Ex
+    show_graph(df)
+
+
+
+
