@@ -37,35 +37,40 @@ def evaluate_coal(data):
             status = "Vermelho"
             reasons.append("PCS fora do limite permitido")
         elif row["PCS (kcal/kg)"] < CRITERIA["PCS (kcal/kg)"]["green_min"]:
-            if status == "Verde": status = "Amarelo"
+            if status == "Verde":
+                status = "Amarelo"
             reasons.append("PCS abaixo do ideal")
 
         if row["PCI (kcal/kg)"] < CRITERIA["PCI (kcal/kg)"]["red_max"]:
             status = "Vermelho"
             reasons.append("PCI fora do limite permitido")
         elif row["PCI (kcal/kg)"] < CRITERIA["PCI (kcal/kg)"]["green_min"]:
-            if status == "Verde": status = "Amarelo"
+            if status == "Verde":
+                status = "Amarelo"
             reasons.append("PCI abaixo do ideal")
 
         if row["% Cinzas"] > CRITERIA["% Cinzas"]["red_min"]:
             status = "Vermelho"
             reasons.append("Cinzas fora do limite permitido")
         elif row["% Cinzas"] > CRITERIA["% Cinzas"]["green_max"]:
-            if status == "Verde": status = "Amarelo"
+            if status == "Verde":
+                status = "Amarelo"
             reasons.append("Cinzas acima do ideal")
 
         if row["% Umidade"] > CRITERIA["% Umidade"]["red_min"]:
             status = "Vermelho"
             reasons.append("Umidade fora do limite permitido")
         elif row["% Umidade"] > CRITERIA["% Umidade"]["green_max"]:
-            if status == "Verde": status = "Amarelo"
+            if status == "Verde":
+                status = "Amarelo"
             reasons.append("Umidade acima do ideal")
 
         if row["% Enxofre"] > CRITERIA["% Enxofre"]["red_min"]:
             status = "Vermelho"
             reasons.append("Enxofre fora do limite permitido")
         elif row["% Enxofre"] > CRITERIA["% Enxofre"]["green_max"]:
-            if status == "Verde": status = "Amarelo"
+            if status == "Verde":
+                status = "Amarelo"
             reasons.append("Enxofre acima do ideal")
             rounded_sulfur = round(row["% Enxofre"], 2)
             if rounded_sulfur in COST_TABLE:
@@ -78,7 +83,9 @@ def evaluate_coal(data):
         )
 
     df = pd.DataFrame(data, index=[0])
-    df["Viabilidade"], df["Justificativa"], df["Custo Adicional (USD/t)"] = zip(*df.apply(evaluate, axis=1))
+    df["Viabilidade"], df["Justificativa"], df["Custo Adicional (USD/t)"] = zip(
+        *df.apply(evaluate, axis=1)
+    )
     return df
 
 # Função para exibir o gráfico
@@ -89,14 +96,30 @@ def show_graph(df):
     plt.figure(figsize=(10, 6))
     for viability, color in color_map.items():
         subset = df[df["Viabilidade"] == viability]
-        plt.scatter(subset["PCS (kcal/kg)"], subset["% Cinzas"],
-                    label=viability, color=color, s=100, edgecolor="black")
+        plt.scatter(
+            subset["PCS (kcal/kg)"],
+            subset["% Cinzas"],
+            label=viability,
+            color=color,
+            s=100,
+            edgecolor="black",
+        )
 
     plt.title("Avaliacao de Viabilidade do Carvao Mineral", fontsize=14)
     plt.xlabel("PCS (kcal/kg)", fontsize=12)
     plt.ylabel("% Cinzas", fontsize=12)
-    plt.axhline(y=CRITERIA["% Cinzas"]["green_max"], color="black", linestyle="--", label="Limite de Cinzas")
-    plt.axvline(x=CRITERIA["PCS (kcal/kg)"]["green_min"], color="blue", linestyle="--", label="Limite de PCS")
+    plt.axhline(
+        y=CRITERIA["% Cinzas"]["green_max"],
+        color="black",
+        linestyle="--",
+        label="Limite de Cinzas",
+    )
+    plt.axvline(
+        x=CRITERIA["PCS (kcal/kg)"]["green_min"],
+        color="blue",
+        linestyle="--",
+        label="Limite de PCS",
+    )
     plt.legend(title="Viabilidade")
     plt.grid(True, linestyle="--", alpha=0.7)
     plt.tight_layout()
@@ -158,10 +181,4 @@ if st.button("Rodar Simulacao"):
     if df["Custo Adicional (USD/t)"].iloc[0]:
         st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
 
-    # Exibe o gráfico
-    graph_buf = show_graph(df)
-    st.image(graph_buf, caption="Gráfico de Viabilidade")
-
-    # Adiciona botão para exportar PDF
-    if st.button("Exportar Relatório em PDF"):
-        pdf_bytes = create_pdf(data, df, graph_buf)
+   
