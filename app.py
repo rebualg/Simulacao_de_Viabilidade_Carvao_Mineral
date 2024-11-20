@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO
 from fpdf import FPDF
+import tempfile  # Para criar arquivos temporários
 
 # Critérios configuráveis para avaliação
 CRITERIA = {
@@ -127,7 +128,11 @@ def create_pdf(data, df, graph_image):
         pdf.cell(0, 10, txt=f"Custo Adicional: {df['Custo Adicional (USD/t)'][0]:.2f} USD/t", ln=True)
 
     pdf.ln(10)
-    pdf.image(graph_image, x=50, y=None, w=100)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+        tmpfile.write(graph_image.read())
+        tmpfile.flush()
+        pdf.image(tmpfile.name, x=50, y=None, w=100)
 
     buf = BytesIO()
     pdf.output(buf)
@@ -155,15 +160,4 @@ if st.button("Rodar Simulacao"):
     if df["Custo Adicional (USD/t)"].iloc[0]:
         st.write(f"**Custo Adicional devido ao enxofre:** {df['Custo Adicional (USD/t)'][0]:.2f} USD/t")
     
-    # Exibe o gráfico
-    graph_image = show_graph(df)
-    st.image(graph_image, caption="Gráfico de Viabilidade")
-
-    # Botão para exportar o PDF
-    pdf_buffer = create_pdf(data, df, graph_image)
-    st.download_button(
-        label="Baixar PDF",
-        data=pdf_buffer,
-        file_name="relatorio_carvao.pdf",
-        mime="application/pdf"
-    )
+    # Ex
